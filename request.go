@@ -35,7 +35,7 @@ func newRequest(params url.Values, token, method string) (*request, error) {
 	}
 
 	if modeDebug {
-		log.Printf("request : %s", data.Encode())
+		log.Printf("request : %+v", data)
 	}
 
 	return &request{body: strings.NewReader(data.Encode()), uri: PushUri, ua: UserAgent}, nil

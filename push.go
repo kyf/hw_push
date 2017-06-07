@@ -98,10 +98,10 @@ func (this *HwPush) Group(tokens []string, message string) error {
 	}
 
 	data := url.Values{
-		"deviceTokenList": []string{strings.Join(tokens, ",")},
+		"deviceTokenList": []string{"[\"" + strings.Join(tokens, "\",\"") + "\"]"},
 		"message":         []string{message},
 		"cacheMode":       []string{"1"},
-		"msgType":         []string{"-1"},
+		"msgType":         []string{"1"},
 	}
 	method := "openpush.message.batch_send"
 	req, err := newRequest(data, this.token.Value, method)
