@@ -3,15 +3,17 @@ package hw_push
 import (
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
-	"net/url"
-	"strings"
+	"net/http/httputil"
 	"sync"
 	"time"
 )
 
 const (
 	ExpireBuff = 60 * 30
+	DebugOn    = true
+	DebugOff   = false
 )
 
 var (
@@ -51,6 +53,11 @@ func (this *HwPush) send(req *request) (*response, error) {
 
 	r.Header.Set("User-Agent", req.ua)
 	r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	if modeDebug {
+		reqBytes, _ := httputil.DumpRequest(r, true)
+		log.Printf("request : %s", string(reqBytes))
+	}
+
 	resp, err := this.client.Do(r)
 	if err != nil {
 		return nil, err
@@ -60,23 +67,13 @@ func (this *HwPush) send(req *request) (*response, error) {
 	return result, err
 }
 
-func (this *HwPush) Single(deviceToken, content string) error {
+func (this *HwPush) Single(deviceToken, title, content string, custom map[string]string) error {
 	err := this.Auth()
 	if err != nil {
 		return err
 	}
 
-	data := url.Values{
-		"deviceToken": []string{deviceToken},
-		"message":     []string{content},
-		"priority":    []string{"0"},
-		"cacheMode":   []string{"1"},
-		"msgType":     []string{"-1"},
-	}
-
-	method := "openpush.message.single_send"
-
-	req, err := newRequest(data, this.token.Value, method)
+	req, err := newRequest(title, content, this.token.Value, []string{deviceToken}, custom, this.ClientId)
 	if err != nil {
 		return err
 	}
@@ -91,46 +88,13 @@ func (this *HwPush) Single(deviceToken, content string) error {
 	return nil
 }
 
-func (this *HwPush) Group(tokens []string, message string) error {
+func (this *HwPush) Group(tokens []string, title, content string, custom map[string]string) error {
 	err := this.Auth()
 	if err != nil {
 		return err
 	}
 
-	data := url.Values{
-		"deviceTokenList": []string{"[\"" + strings.Join(tokens, "\",\"") + "\"]"},
-		"message":         []string{message},
-		"cacheMode":       []string{"1"},
-		"msgType":         []string{"1"},
-	}
-	method := "openpush.message.batch_send"
-	req, err := newRequest(data, this.token.Value, method)
-	if err != nil {
-		return err
-	}
-	resp, err := this.send(req)
-	if err != nil {
-		return err
-	}
-	if resp.Code != 0 || resp.Error != "" {
-		return errors.New(fmt.Sprintf("[%d]%s %s", resp.Code, resp.Message, resp.Error))
-	}
-
-	return nil
-}
-
-func (this *HwPush) All(message string) error {
-	err := this.Auth()
-	if err != nil {
-		return err
-	}
-
-	data := url.Values{
-		"push_type": []string{"2"},
-		"android":   []string{message},
-	}
-	method := "openpush.openapi.notification_send"
-	req, err := newRequest(data, this.token.Value, method)
+	req, err := newRequest(title, content, this.token.Value, tokens, custom, this.ClientId)
 	if err != nil {
 		return err
 	}

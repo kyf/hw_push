@@ -1,13 +1,11 @@
 package hw_push
 
 const (
-	AuthUri = "https://login.vmall.com/oauth2/token"
+	AuthUri = "https://login.cloud.huawei.com/oauth2/v2/token"
 
-	PushUri = "https://api.vmall.com/rest.php"
+	PushUri = "https://api.push.hicloud.com/pushsend.do"
 
 	GrantType = "client_credentials"
 
-	ResponseFormat = "JSON"
-
-	SingleMethod = "openpush.message.single_send"
+	MethodName = "openpush.message.api.send"
 )
