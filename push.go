@@ -66,11 +66,14 @@ func (this *HwPush) send(req *request) (interface{}, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	if this.Version == "v1" {
-		return newResponseV1(resp.Body)
-	} else {
-		return newResponse(resp.Body)
-	}
+	return newResponseV1(resp.Body)
+	/*
+		if this.Version == "v1" {
+			return newResponseV1(resp.Body)
+		} else {
+			return newResponse(resp.Body)
+		}
+	*/
 }
 
 func (this *HwPush) Single(deviceToken, title, content string, custom map[string]string) error {
@@ -94,10 +97,12 @@ func (this *HwPush) Single(deviceToken, title, content string, custom map[string
 	}
 	switch _resp := resp.(type) {
 	case *responseV1:
+		log.Print("v1 response is ", _resp)
 		if _resp.Code != V1_SUCCESS_CODE {
 			return errors.New(fmt.Sprintf("[%s]%s", _resp.Code, _resp.Message))
 		}
 	case *response:
+		log.Print("v0 response is ", _resp)
 		if _resp.Code != 0 {
 			return errors.New(fmt.Sprintf("[%d]%s", _resp.Code, _resp.Message))
 		}

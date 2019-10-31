@@ -35,7 +35,7 @@ func newResponse(reader io.Reader) (*response, error) {
 		return nil, err
 	}
 	if modeDebug {
-		log.Printf("response : %s", string(data))
+		log.Printf("v0 response : %s", string(data))
 	}
 	resp := response{}
 	decoder := json.NewDecoder(bytes.NewReader(data))
@@ -55,7 +55,7 @@ func newResponseV1(reader io.Reader) (*responseV1, error) {
 		return nil, err
 	}
 	if modeDebug {
-		log.Printf("response : %s", string(data))
+		log.Printf("v1 response : %s", string(data))
 	}
 	resp := responseV1{}
 	decoder := json.NewDecoder(bytes.NewReader(data))
