@@ -84,7 +84,7 @@ func (this *HwPush) Single(deviceToken, title, content string, custom map[string
 
 	var req *request
 	if this.Version == "v1" {
-		req, err = newRequestV1(title, content, this.token.Value, []string{deviceToken}, custom, this.ClientId)
+		req, err = newRequestV1(title, content, this.token.Value, []string{deviceToken}, custom, this.ClientId, "")
 	} else {
 		req, err = newRequest(title, content, this.token.Value, []string{deviceToken}, custom, this.ClientId)
 	}
@@ -117,7 +117,35 @@ func (this *HwPush) Group(tokens []string, title, content string, custom map[str
 		return err
 	}
 
-	req, err := newRequest(title, content, this.token.Value, tokens, custom, this.ClientId)
+	req, err := newRequestV1(title, content, this.token.Value, tokens, custom, this.ClientId, "")
+	if err != nil {
+		return err
+	}
+	resp, err := this.send(req)
+	if err != nil {
+		return err
+	}
+	switch _resp := resp.(type) {
+	case *responseV1:
+		if _resp.Code != V1_SUCCESS_CODE {
+			return errors.New(fmt.Sprintf("[%s]%s ", _resp.Code, _resp.Message))
+		}
+	case *response:
+		if _resp.Code != 0 {
+			return errors.New(fmt.Sprintf("[%d]%s\t%s", _resp.Code, _resp.Message, _resp.Error))
+		}
+	}
+
+	return nil
+}
+
+func (this *HwPush) All(title, content string, custom map[string]string) error {
+	err := this.Auth()
+	if err != nil {
+		return err
+	}
+
+	req, err := newRequestV1(title, content, this.token.Value, []string{}, custom, this.ClientId, "default")
 	if err != nil {
 		return err
 	}

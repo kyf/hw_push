@@ -20,29 +20,40 @@ type request struct {
 	ua   string
 }
 
-func newRequestV1(title, content, token string, devices []string, custom map[string]string, appid string) (*request, error) {
+func newRequestV1(title, content, token string, devices []string, custom map[string]string, appid, topic string) (*request, error) {
 
 	intent := fmt.Sprintf("intent://com.liurenyou.im/notification?action=%s#Intent;scheme=wonderfullpush;launchFlags=0x10000000;end", custom["orderid"])
 
-	payload := map[string]interface{}{
-		"validate_only": false,
-		"message": map[string]interface{}{
+	message := map[string]interface{}{
+		"notification": map[string]interface{}{
+			"title": title,
+			"body":  content,
+		},
+		"android": map[string]interface{}{
 			"notification": map[string]interface{}{
 				"title": title,
 				"body":  content,
-			},
-			"android": map[string]interface{}{
-				"notification": map[string]interface{}{
-					"title": title,
-					"body":  content,
-					"click_action": map[string]interface{}{
-						"type":   1,
-						"intent": intent,
-					},
+				"click_action": map[string]interface{}{
+					"type":   1,
+					"intent": intent,
 				},
 			},
-			"token": devices,
 		},
+		//"token": devices,
+		//"topic": topic,
+	}
+
+	if len(devices) > 0 {
+		message["token"] = devices
+	}
+
+	if topic != "" {
+		message["topic"] = topic
+	}
+
+	payload := map[string]interface{}{
+		"validate_only": false,
+		"message":       message,
 	}
 
 	_payload, err := json.Marshal(payload)
