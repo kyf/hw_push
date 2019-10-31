@@ -32,9 +32,10 @@ type HwPush struct {
 	client       *http.Client
 	token        *AccessToken
 	tokenLocker  sync.Mutex
+	Version      string
 }
 
-func New(clientid, clientSecret string, isdebug bool) *HwPush {
+func New(clientid, clientSecret string, isdebug bool, version string) *HwPush {
 	modeDebug = isdebug
 
 	return &HwPush{
@@ -42,10 +43,11 @@ func New(clientid, clientSecret string, isdebug bool) *HwPush {
 		ClientId:     clientid,
 		ClientSecret: clientSecret,
 		client:       &http.Client{},
+		Version:      version,
 	}
 }
 
-func (this *HwPush) send(req *request) (*responseV1, error) {
+func (this *HwPush) send(req *request) (interface{}, error) {
 	r, err := http.NewRequest(http.MethodPost, req.uri, req.body)
 	if err != nil {
 		return nil, err
@@ -64,9 +66,11 @@ func (this *HwPush) send(req *request) (*responseV1, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	//result, err := newResponse(resp.Body)
-	result, err := newResponseV1(resp.Body)
-	return result, err
+	if this.Version == "v1" {
+		return newResponseV1(resp.Body)
+	} else {
+		return newResponse(resp.Body)
+	}
 }
 
 func (this *HwPush) Single(deviceToken, title, content string, custom map[string]string) error {
@@ -75,7 +79,12 @@ func (this *HwPush) Single(deviceToken, title, content string, custom map[string
 		return err
 	}
 
-	req, err := newRequestV1(title, content, this.token.Value, []string{deviceToken}, custom, this.ClientId)
+	var req *request
+	if this.Version == "v1" {
+		req, err = newRequestV1(title, content, this.token.Value, []string{deviceToken}, custom, this.ClientId)
+	} else {
+		req, err = newRequest(title, content, this.token.Value, []string{deviceToken}, custom, this.ClientId)
+	}
 	if err != nil {
 		return err
 	}
@@ -83,8 +92,15 @@ func (this *HwPush) Single(deviceToken, title, content string, custom map[string
 	if err != nil {
 		return err
 	}
-	if resp.Code != V1_SUCCESS_CODE {
-		return errors.New(fmt.Sprintf("[%s]%s", resp.Code, resp.Message))
+	switch _resp := resp.(type) {
+	case *responseV1:
+		if _resp.Code != V1_SUCCESS_CODE {
+			return errors.New(fmt.Sprintf("[%s]%s", _resp.Code, _resp.Message))
+		}
+	case *response:
+		if _resp.Code != 0 {
+			return errors.New(fmt.Sprintf("[%d]%s", _resp.Code, _resp.Message))
+		}
 	}
 
 	return nil
@@ -104,8 +120,15 @@ func (this *HwPush) Group(tokens []string, title, content string, custom map[str
 	if err != nil {
 		return err
 	}
-	if resp.Code != V1_SUCCESS_CODE {
-		return errors.New(fmt.Sprintf("[%s]%s ", resp.Code, resp.Message))
+	switch _resp := resp.(type) {
+	case *responseV1:
+		if _resp.Code != V1_SUCCESS_CODE {
+			return errors.New(fmt.Sprintf("[%s]%s ", _resp.Code, _resp.Message))
+		}
+	case *response:
+		if _resp.Code != 0 {
+			return errors.New(fmt.Sprintf("[%d]%s\t%s", _resp.Code, _resp.Message, _resp.Error))
+		}
 	}
 
 	return nil
