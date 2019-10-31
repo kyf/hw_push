@@ -1,6 +1,7 @@
 package hw_push
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -17,6 +18,40 @@ type request struct {
 	body io.Reader
 	uri  string
 	ua   string
+}
+
+func newRequestV1(title, content, token string, devices []string, custom map[string]string, appid string) (*request, error) {
+
+	intent := fmt.Sprintf("intent://com.liurenyou.im/notification?action=%s#Intent;scheme=wonderfullpush;launchFlags=0x10000000;end", custom["orderid"])
+
+	payload := map[string]interface{}{
+		"validate_only": false,
+		"message": map[string]interface{}{
+			"notification": map[string]interface{}{
+				"title": title,
+				"body":  content,
+			},
+			"android": map[string]interface{}{
+				"notification": map[string]interface{}{
+					"title": title,
+					"body":  content,
+					"click_action": map[string]interface{}{
+						"type":   1,
+						"intent": intent,
+					},
+				},
+			},
+			"token": devices,
+		},
+	}
+
+	_payload, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+
+	uri := fmt.Sprintf(PushUriV1, appid)
+	return &request{body: bytes.NewReader(_payload), uri: uri, ua: UserAgent}, nil
 }
 
 func newRequest(title, content, token string, devices []string, custom map[string]string, appid string) (*request, error) {

@@ -8,4 +8,6 @@ const (
 	GrantType = "client_credentials"
 
 	MethodName = "openpush.message.api.send"
+
+	PushUriV1 = "https://push-api.cloud.huawei.com/v1/%s/messages:send"
 )

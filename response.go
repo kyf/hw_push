@@ -11,6 +11,8 @@ import (
 const (
 	RESP_STATE_OK    = 1
 	RESP_STATE_ERROR = 0
+
+	V1_SUCCESS_CODE = "80000000"
 )
 
 type authResponse struct {
@@ -36,6 +38,26 @@ func newResponse(reader io.Reader) (*response, error) {
 		log.Printf("response : %s", string(data))
 	}
 	resp := response{}
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	err = decoder.Decode(&resp)
+	return &resp, err
+}
+
+type responseV1 struct {
+	Code    string `json:"code,omitempty"`
+	Message string `json:"msg,omitempty"`
+	ReqId   string `json:"requestId,omitempty"`
+}
+
+func newResponseV1(reader io.Reader) (*responseV1, error) {
+	data, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return nil, err
+	}
+	if modeDebug {
+		log.Printf("response : %s", string(data))
+	}
+	resp := responseV1{}
 	decoder := json.NewDecoder(bytes.NewReader(data))
 	err = decoder.Decode(&resp)
 	return &resp, err

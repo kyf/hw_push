@@ -45,13 +45,14 @@ func New(clientid, clientSecret string, isdebug bool) *HwPush {
 	}
 }
 
-func (this *HwPush) send(req *request) (*response, error) {
+func (this *HwPush) send(req *request) (*responseV1, error) {
 	r, err := http.NewRequest(http.MethodPost, req.uri, req.body)
 	if err != nil {
 		return nil, err
 	}
 
 	r.Header.Set("User-Agent", req.ua)
+	r.Header.Set("Authorization", this.token.Value)
 	r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	if modeDebug {
 		reqBytes, _ := httputil.DumpRequest(r, true)
@@ -63,7 +64,8 @@ func (this *HwPush) send(req *request) (*response, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	result, err := newResponse(resp.Body)
+	//result, err := newResponse(resp.Body)
+	result, err := newResponseV1(resp.Body)
 	return result, err
 }
 
@@ -73,7 +75,7 @@ func (this *HwPush) Single(deviceToken, title, content string, custom map[string
 		return err
 	}
 
-	req, err := newRequest(title, content, this.token.Value, []string{deviceToken}, custom, this.ClientId)
+	req, err := newRequestV1(title, content, this.token.Value, []string{deviceToken}, custom, this.ClientId)
 	if err != nil {
 		return err
 	}
@@ -81,8 +83,8 @@ func (this *HwPush) Single(deviceToken, title, content string, custom map[string
 	if err != nil {
 		return err
 	}
-	if resp.Code != 0 {
-		return errors.New(fmt.Sprintf("[%d]%s", resp.Code, resp.Message))
+	if resp.Code != V1_SUCCESS_CODE {
+		return errors.New(fmt.Sprintf("[%s]%s", resp.Code, resp.Message))
 	}
 
 	return nil
@@ -102,8 +104,8 @@ func (this *HwPush) Group(tokens []string, title, content string, custom map[str
 	if err != nil {
 		return err
 	}
-	if resp.Code != 0 || resp.Error != "" {
-		return errors.New(fmt.Sprintf("[%d]%s %s", resp.Code, resp.Message, resp.Error))
+	if resp.Code != V1_SUCCESS_CODE {
+		return errors.New(fmt.Sprintf("[%s]%s ", resp.Code, resp.Message))
 	}
 
 	return nil
